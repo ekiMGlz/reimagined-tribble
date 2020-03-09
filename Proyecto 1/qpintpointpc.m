@@ -15,7 +15,7 @@ function [x, l, mu, z, iter, fvals] = qpintpointpc(Q, A, F, b, c, d)
     z = ones(p, 1);
     mu = ones(p, 1);
     
-    rx = Q*x + c + A'*l - F*mu;
+    rx = Q*x + c + A'*l - F'*mu;
     rl = A*x - b;
     rmu = -F*x + z + d;
     rz = mu.*z;
@@ -24,7 +24,7 @@ function [x, l, mu, z, iter, fvals] = qpintpointpc(Q, A, F, b, c, d)
 
     
     fvals = zeros(MAX_ITER, 1);
-    fvals(1) = 0.5*dot(x, Q*x) + dot(c, x);
+    fvals(1) = norm([rx;rl;rmu;rz]);
 
     while norm([rx;rl;rmu;rz]) > TOL && iter < MAX_ITER
         % Sistema predictivo
@@ -42,10 +42,10 @@ function [x, l, mu, z, iter, fvals] = qpintpointpc(Q, A, F, b, c, d)
         alpha_k = 1;
         for i = (1:p)
             if delta_mu(i) < 0
-                alpha_k = min(alpha_k, - rmu(i)/delta_mu(i));
+                alpha_k = min(alpha_k, - mu(i)/delta_mu(i));
             end
             if delta_z(i) < 0
-                alpha_k = min(alpha_k, - rz(i)/delta_z(i));
+                alpha_k = min(alpha_k, - z(i)/delta_z(i));
             end
         end
 
@@ -93,7 +93,7 @@ function [x, l, mu, z, iter, fvals] = qpintpointpc(Q, A, F, b, c, d)
         rz = mu.*z;
 
         iter = iter + 1;
-        fvals(iter + 1) = 0.5*dot(x, Q*x) + dot(c, x);
+        fvals(iter + 1) = norm([rx;rl;rmu;rz]);
     end
     
     fvals = fvals(1:iter + 1);
