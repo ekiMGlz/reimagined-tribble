@@ -1,5 +1,4 @@
-function [x, l, mu, z, iter, fvals] = qpintpointpc(Q, A, F, b, c, d)
-
+function [x, l, mu, z, iter, fval, norms, conds] = qpintpointpc(Q, A, F, b, c, d)
     %Params
     MAX_ITER = 100;
     TOL = 1e-05;
@@ -8,94 +7,120 @@ function [x, l, mu, z, iter, fvals] = qpintpointpc(Q, A, F, b, c, d)
     n = length(c);
     m = length(b);
     p = length(d);
-    gamma_size = 1;
 
     x = A\b;
     l = zeros(m, 1);
-    z = ones(p, 1);
     mu = ones(p, 1);
+    z = mu;
+
+    F1 = Q*x + c + A'*l - F'*mu;
+    F2 = A*x - b;
+    F3 = -F*x + z + d;
+    F4 = mu.*z;
+
     
-    rx = Q*x + c + A'*l - F'*mu;
-    rl = A*x - b;
-    rmu = -F*x + z + d;
-    rz = mu.*z;
+    
+    norms = zeros(MAX_ITER + 1, 1);
+    norms(1)  = norm([F1;F2;F3;F4]);
+    
+    conds = zeros(MAX_ITER, 1);
+    initFull = true;
 
     K = [zeros(n), A'; A, zeros(m)];
 
     
-    fvals = zeros(MAX_ITER, 1);
-    fvals(1) = norm([rx;rl;rmu;rz]);
 
-    while norm([rx;rl;rmu;rz]) > TOL && iter < MAX_ITER
-        % Sistema predictivo
-        K(1:n, 1:n) = Q + F' * spdiags(mu./z, p, 1) * F;
-        r = [rx + F'*(ones(p, 1) - (mu.^2)./z); rl];
+    while norms(iter + 1) > TOL && iter < MAX_ITER
+        % Actualizar sistema reducido, revisar condicion
+        K(1:n, 1:n) = Q + F' * diag(mu./z) * F;
+        conds(iter + 1) = rcond(K);
         
         % Resolver el sistema predictivo
-        delta_v = - K\r;
+        if(conds(iter + 1) < TOL)
+            % Sistema completo
+            if initFull
+                Jac_F = zeros(n + m + 2*p);
+                Jac_F(1:n, 1:n + m + p) = [Q, A', -F'];
+                Jac_F(n + 1:n + m + p, 1:n) = [A; -F];
+                Jac_F(n + m + 1: end - p, end - p + 1: end) = eye(p);
 
-        delta_x = delta_v(1:n);
-        delta_z = rmu + F*delta_x;
-        delta_mu = ones(p, 1) - (mu.*delta_z)./z;
-
-        % Encontrar alpha para mantener rm y rz > 0
-        alpha_k = 1;
-        for i = (1:p)
-            if delta_mu(i) < 0
-                alpha_k = min(alpha_k, - mu(i)/delta_mu(i));
+                initFull = false;
             end
-            if delta_z(i) < 0
-                alpha_k = min(alpha_k, - z(i)/delta_z(i));
-            end
+            
+            Jac_F(end - p + 1:end, n + m + 1:end) = [diag(z), diag(mu)];
+            delta_w = - Jac_F\[F1;F2;F3;F4];
+            
+            delta_mu = delta_w(n + m + 1:end - p);
+            delta_z = delta_w(end - p + 1:end);    
+        else
+            % Sistema reducido
+            r = [F1 + F'*(mu-F3.*mu./z); F2];
+            delta_w = -K\r;
+            delta_x = delta_w(1:n);
+            
+            delta_z = F3 + F*delta_x;
+            delta_mu = mu - mu.*delta_z./z;
         end
 
-        % Preguntar si es necesario
-        alpha_k = alpha_k * 0.995;
+        % Recorte de paso
+        alpha_k = 1;
+        for i = 1:p
+            if delta_mu(i) < 0
+                alpha_k = min(alpha_k, -mu(i)/delta_mu(i));
+            end
+            if delta_z(i) < 0
+                alpha_k = min(alpha_k, -z(i)/delta_z(i));
+            end
+        end
+        alpha_k = 0.95*alpha_k;
 
-        gamma = dot(rz + alpha_k*delta_z, rmu + alpha_k*delta_mu)/p;
-        gamma = (gamma/gamma_size)^3;
-        %Preguntar si es gamma o gamma_size
-        gamma_size = gamma_size * gamma;
-
-        % Modificar r para el sistema correctivo
-        r(1:n) = r(1:n) - F'*((delta_z.*delta_mu + gamma)./z);
+        % Actualizar gamma_k
+        gamma_size = dot(z, mu)/p;
+        gamma_k = dot(z + alpha_k*delta_z, mu + alpha_k*delta_mu)/p;
+        gamma_k = (gamma_k/gamma_size)^3;
+        gamma_k = gamma_size * gamma_k;
         
         % Resolver el sistema correctivo
-        delta_v = - K\r;
-        
-        delta_x = delta_v(1:n);
-        delta_l = delta_v(n+1:end);
-        delta_z = rmu + F*delta_x;
-        delta_mu = ones(p, 1) - (mu.*delta_z)./z;
+        if conds(iter + 1) < TOL
+            % Sistema completo    
+            delta_w = - Jac_F\[F1;F2;F3;F4 + (alpha_k^2)*delta_z.*delta_mu - gamma_k];
+            
+            delta_x = delta_w(1:n);
+            delta_l = delta_w(n + 1:n+m);
+            delta_mu = delta_w(n + m + 1:end - p);
+            delta_z = delta_w(end - p + 1:end);
+        else
+            % Sistema reducido
+        end
 
-        % Encontrar alpha para mantener rm y rz > 0
+        % Recorte de paso
         alpha_k = 1;
-        for i = (1:p)
+        for i = 1:p
             if delta_mu(i) < 0
-                alpha_k = min(alpha_k, - rmu(i)/delta_mu(i));
+                alpha_k = min(alpha_k, -mu(i)/delta_mu(i));
             end
             if delta_z(i) < 0
-                alpha_k = min(alpha_k, - rz(i)/delta_z(i));
+                alpha_k = min(alpha_k, -z(i)/delta_z(i));
             end
         end
-        
-        alpha_k = alpha_k * 0.995;
-        
-        % Actualizar valores
-        x = x + alpha_k * delta_x;
-        l = l + alpha_k * delta_l;
-        mu = mu + alpha_k * delta_mu;
-        z = z + alpha_k * delta_z;
+        alpha_k = 0.95*alpha_k;
 
-        rx = Q*x + c + A'*l - F*mu;
-        rl = A*x - b;
-        rmu = -F*x + z + d;
-        rz = mu.*z;
+        % Actualizar valores
+        x = x + alpha_k*delta_x;
+        l = l + alpha_k*delta_l;
+        mu = mu + alpha_k*delta_mu;
+        z = z + alpha_k*delta_z;
+
+        F1 = Q*x + c + A'*l - F'*mu;
+        F2 = A*x - b;
+        F3 = -F*x + z + d;
+        F4 = mu.*z;
 
         iter = iter + 1;
-        fvals(iter + 1) = norm([rx;rl;rmu;rz]);
+        norms(iter + 1) = norm([F1;F2;F3;F4]);
     end
-    
-    fvals = fvals(1:iter + 1);
-    
+
+    norms = norms(1:iter + 1);
+    conds = conds(1:iter);
+    fval = 0.5*dot(x, Q*x) + dot(c, x);
 end
