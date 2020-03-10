@@ -1,6 +1,7 @@
-function [x, l, mu, z, iter, fval, norms, conds] = qpintpointpc(Q, A, F, b, c, d)
+function [x, l, mu, z, iter, fval, norms, time, rconds] = qpintpointpc(Q, A, F, b, c, d)
     %Params
     MAX_ITER = 100;
+    MIN_RCOND = eps;
     TOL = 1e-05;
     iter = 0;
 
@@ -23,20 +24,20 @@ function [x, l, mu, z, iter, fval, norms, conds] = qpintpointpc(Q, A, F, b, c, d
     norms = zeros(MAX_ITER + 1, 1);
     norms(1)  = norm([F1;F2;F3;F4]);
     
-    conds = zeros(MAX_ITER, 1);
+    rconds = zeros(MAX_ITER, 1);
     initFull = true;
 
     K = [zeros(n), A'; A, zeros(m)];
 
     
-
+    tic;
     while norms(iter + 1) > TOL && iter < MAX_ITER
         % Actualizar sistema reducido, revisar condicion
         K(1:n, 1:n) = Q + F' * diag(mu./z) * F;
-        conds(iter + 1) = rcond(K);
+        rconds(iter + 1) = rcond(K);
         
         % Resolver el sistema predictivo
-        if(conds(iter + 1) < TOL)
+        if(rconds(iter + 1) < MIN_RCOND)
             % Sistema completo
             if initFull
                 Jac_F = zeros(n + m + 2*p);
@@ -50,40 +51,40 @@ function [x, l, mu, z, iter, fval, norms, conds] = qpintpointpc(Q, A, F, b, c, d
             Jac_F(end - p + 1:end, n + m + 1:end) = [diag(z), diag(mu)];
             delta_w = - Jac_F\[F1;F2;F3;F4];
             
-            delta_mu = delta_w(n + m + 1:end - p);
-            delta_z = delta_w(end - p + 1:end);    
+            delta_mu_p = delta_w(n + m + 1:end - p);
+            delta_z_p = delta_w(end - p + 1:end);    
         else
             % Sistema reducido
-            r = [F1 + F'*(mu-F3.*mu./z); F2];
-            delta_w = -K\r;
+            r = [-F1 + F'*(- mu + F3.*mu./z); F2];
+            delta_w = K\r;
             delta_x = delta_w(1:n);
             
-            delta_z = F3 + F*delta_x;
-            delta_mu = mu - mu.*delta_z./z;
+            delta_z_p = - F3 + F*delta_x;
+            delta_mu_p = - mu.*(1 + delta_z_p./z);
         end
 
         % Recorte de paso
         alpha_k = 1;
         for i = 1:p
-            if delta_mu(i) < 0
-                alpha_k = min(alpha_k, -mu(i)/delta_mu(i));
+            if delta_mu_p(i) < 0
+                alpha_k = min(alpha_k, -mu(i)/delta_mu_p(i));
             end
-            if delta_z(i) < 0
-                alpha_k = min(alpha_k, -z(i)/delta_z(i));
+            if delta_z_p(i) < 0
+                alpha_k = min(alpha_k, -z(i)/delta_z_p(i));
             end
         end
         alpha_k = 0.95*alpha_k;
 
         % Actualizar gamma_k
         gamma_size = dot(z, mu)/p;
-        gamma_k = dot(z + alpha_k*delta_z, mu + alpha_k*delta_mu)/p;
+        gamma_k = dot(z + alpha_k*delta_z_p, mu + alpha_k*delta_mu_p)/p;
         gamma_k = (gamma_k/gamma_size)^3;
         gamma_k = gamma_size * gamma_k;
         
         % Resolver el sistema correctivo
-        if conds(iter + 1) < TOL
+        if(rconds(iter + 1) < MIN_RCOND)
             % Sistema completo    
-            delta_w = - Jac_F\[F1;F2;F3;F4 + (alpha_k^2)*delta_z.*delta_mu - gamma_k];
+            delta_w = - Jac_F\[F1;F2;F3;F4 + (alpha_k^2)*delta_z_p.*delta_mu_p - gamma_k];
             
             delta_x = delta_w(1:n);
             delta_l = delta_w(n + 1:n+m);
@@ -91,6 +92,13 @@ function [x, l, mu, z, iter, fval, norms, conds] = qpintpointpc(Q, A, F, b, c, d
             delta_z = delta_w(end - p + 1:end);
         else
             % Sistema reducido
+            r(1:n) = -F1 + F'*(- mu + (mu.*F3 + gamma_k - (alpha_k^2)*delta_mu_p.*delta_z_p)./z);
+            delta_w = K\r;
+            
+            delta_x = delta_w(1:n);
+            delta_l = delta_w(n + 1:n + m);
+            delta_z = - F3 + F*delta_x;
+            delta_mu = - mu - (- gamma_k + mu.*delta_z + (alpha_k^2)*delta_mu_p.*delta_z_p)./z;
         end
 
         % Recorte de paso
@@ -119,8 +127,8 @@ function [x, l, mu, z, iter, fval, norms, conds] = qpintpointpc(Q, A, F, b, c, d
         iter = iter + 1;
         norms(iter + 1) = norm([F1;F2;F3;F4]);
     end
-
+    time = toc;
     norms = norms(1:iter + 1);
-    conds = conds(1:iter);
+    rconds = rconds(1:iter);
     fval = 0.5*dot(x, Q*x) + dot(c, x);
 end

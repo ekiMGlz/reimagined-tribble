@@ -1,8 +1,9 @@
-function [x, l, mu, z, iter, fval, norms, time] = qpintpoint_full(Q, A, F, b, c, d)
+function [x, l, mu, z, iter, fval, norms, time, rconds] = qpintpoint(Q, A, F, b, c, d)
     %Params
     MAX_ITER = 100;
     TOL = 1e-05;
     iter = 0;
+    MIN_RCOND = eps;
 
     n = length(c);
     m = length(b);
@@ -28,17 +29,41 @@ function [x, l, mu, z, iter, fval, norms, time] = qpintpoint_full(Q, A, F, b, c,
 
     norms = zeros(MAX_ITER, 1);
     norms(1)  = norm([F1;F2;F3;F4]);
+    
+    rconds = zeros(MAX_ITER, 1);
+    initFull = true;
 
     tic;
     while norms(iter + 1) > TOL && iter < MAX_ITER
 
-        Jac_F(end - p + 1:end, n + m + 1:end) = [diag(z), diag(mu)];
-        delta_w = - Jac_F\[F1;F2;F3;F4 - gamma_k];
+        % Actualizar sistema reducido, revisar condicion
+        K(1:n, 1:n) = Q + F' * diag(mu./z) * F;
+        rconds(iter + 1) = rcond(K);
         
-        delta_x = delta_w(1:n);
-        delta_l = delta_w(n + 1:n+m);
-        delta_mu = delta_w(n + m + 1:end - p);
-        delta_z = delta_w(end - p + 1:end);
+        % Resolver el sistema predictivo
+        %if(rconds(iter + 1) < MIN_RCOND)
+        if true
+            % Sistema completo
+            if initFull
+                Jac_F = zeros(n + m + 2*p);
+                Jac_F(1:n, 1:n + m + p) = [Q, A', -F'];
+                Jac_F(n + 1:n + m + p, 1:n) = [A; -F];
+                Jac_F(n + m + 1: end - p, end - p + 1: end) = eye(p);
+
+                initFull = false;
+            end
+            
+            Jac_F(end - p + 1:end, n + m + 1:end) = [diag(z), diag(mu)];
+            delta_w = - Jac_F\[F1;F2;F3;F4 - gamma_k];
+            
+            delta_x = delta_w(1:n);
+            delta_l = delta_w(n + 1:n+m);
+            delta_mu = delta_w(n + m + 1:end - p);
+            delta_z = delta_w(end - p + 1:end);  
+        else
+            % Sistema reducido
+            
+        end
 
         % Recorte de paso
         alpha_k = 1;
@@ -68,6 +93,7 @@ function [x, l, mu, z, iter, fval, norms, time] = qpintpoint_full(Q, A, F, b, c,
         norms(iter + 1) = norm([F1;F2;F3;F4]);
     end
     time = toc;
+    rconds = rconds(1:iter);
     norms = norms(1:iter + 1);
     fval = 0.5*dot(x, Q*x) + dot(c, x);
 end

@@ -1,4 +1,4 @@
-function [x, l, mu, z, iter, fval, norms] = qpintpointpc_full(Q, A, F, b, c, d)
+function [x, l, mu, z, iter, fval, norms, time] = qpintpointpc_full(Q, A, F, b, c, d)
     %Params
     MAX_ITER = 100;
     TOL = 1e-05;
@@ -27,6 +27,7 @@ function [x, l, mu, z, iter, fval, norms] = qpintpointpc_full(Q, A, F, b, c, d)
     norms = zeros(MAX_ITER, 1);
     norms(1)  = norm([F1;F2;F3;F4]);
 
+    tic;
     while norms(iter + 1) > TOL && iter < MAX_ITER
         % Resolver sistema predictivo
         Jac_F(end - p + 1:end, n + m + 1:end) = [diag(z), diag(mu)];
@@ -88,7 +89,7 @@ function [x, l, mu, z, iter, fval, norms] = qpintpointpc_full(Q, A, F, b, c, d)
         iter = iter + 1;
         norms(iter + 1) = norm([F1;F2;F3;F4]);
     end
-
+    time = toc;
     norms = norms(1:iter + 1);
     fval = 0.5*dot(x, Q*x) + dot(c, x);
 end
