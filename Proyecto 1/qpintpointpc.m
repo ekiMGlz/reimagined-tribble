@@ -55,7 +55,7 @@ function [x, l, mu, z, iter, fval, norms, time, rconds] = qpintpointpc(Q, A, F, 
             delta_z_p = delta_w(end - p + 1:end);    
         else
             % Sistema reducido
-            r = [-F1 + F'*(- mu + F3.*mu./z); F2];
+            r = [-F1 + F'*(- mu + F3.*mu./z); -F2];
             delta_w = K\r;
             delta_x = delta_w(1:n);
             
