@@ -1,4 +1,4 @@
-load data\AFIRO
+load data\SCTAP1
 
 A = full(A);
 n = length(c);

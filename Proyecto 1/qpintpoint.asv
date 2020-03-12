@@ -33,8 +33,6 @@ function [x, l, mu, z, iter, fval, norms, time, rconds] = qpintpoint(Q, A, F, b,
     rconds = zeros(MAX_ITER, 1);
     initFull = true;
 
-    K = [zeros(n), A'; A, zeros(m)];
-    
     tic;
     while norms(iter + 1) > TOL && iter < MAX_ITER
 
@@ -62,13 +60,9 @@ function [x, l, mu, z, iter, fval, norms, time, rconds] = qpintpoint(Q, A, F, b,
             delta_mu = delta_w(n + m + 1:end - p);
             delta_z = delta_w(end - p + 1:end);  
         else
-            % Sistema reducido            
-            r = [-F1 + F'*(- mu + F3.*mu./z); -F2];
-            delta_w = K\r;
-            delta_x = delta_w(1:n);
-            delta_l = delta_w(n + 1:n+m);
-            delta_z = - F3 + F*delta_x;
-            delta_mu = - mu.*(1 + delta_z./z);
+            % Sistema reducido
+            K(1:n,n+1:m) = A';
+            K(
             
         end
 
