@@ -1,6 +1,6 @@
 function [x, l, mu, z, iter, fval, norms, time, rconds] = qpintpointpc(Q, A, F, b, c, d)
     %Params
-    MAX_ITER = 100;
+    MAX_ITER = 150;
     MIN_RCOND = eps;
     TOL = 1e-05;
     iter = 0;

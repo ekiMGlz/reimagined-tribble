@@ -1,6 +1,6 @@
 function [x, l, mu, z, iter, fval, norms, time] = qpintpoint_full(Q, A, F, b, c, d)
     %Params
-    MAX_ITER = 100;
+    MAX_ITER = 150;
     TOL = 1e-05;
     iter = 0;
 
