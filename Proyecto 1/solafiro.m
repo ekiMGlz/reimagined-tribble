@@ -2,7 +2,7 @@ clear;clc;
 format shortG
 %% Params
 name = 'AFIRO';
-load(strcat('data\', name))
+load(strcat('data/', name))
 
 MIN_RCOND = eps;
 TOL = 1e-5;
