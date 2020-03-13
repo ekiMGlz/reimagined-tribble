@@ -1,0 +1,17 @@
+Problema: BOEING1
+n = 726
+m = 351
+qpintpoint_full converge: false
+qpintpoint converge: false
+qpintpointpc_full converge: false
+qpintpointpc converge: false
+quadprog converge: false
+                   qpintpoint_full    qpintpoint    qpintpointpc_full    qpintpointpc    quadprog 
+                   _______________    __________    _________________    ____________    _________
+
+    Iteraciones             150              150              150                150           150
+    Tiempo [s]           30.539           20.984           60.288             21.684        2.5559
+    Fval             1.7284e+08       1.7363e+08       1.7182e+08         1.7182e+08     4.158e+06
+
+qpintpoint: 60 / 150 iteraciones utilizando sistema lineal completo
+qpintpointpc: 23 / 150 iteraciones utilizando sistema lineal completo

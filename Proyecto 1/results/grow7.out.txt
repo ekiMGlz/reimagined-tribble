@@ -1,0 +1,17 @@
+Problema: GROW7
+n = 301
+m = 140
+qpintpoint_full converge: true
+qpintpoint converge: true
+qpintpointpc_full converge: true
+qpintpointpc converge: true
+quadprog converge: true
+                   qpintpoint_full    qpintpoint    qpintpointpc_full    qpintpointpc    quadprog
+                   _______________    __________    _________________    ____________    ________
+
+    Iteraciones             25              21                14                14             11
+    Tiempo [s]         0.69438         0.15178           0.71385           0.16869       0.039308
+    Fval                -88.36          -88.36            -88.36            -88.36         -88.36
+
+qpintpoint: 0 / 21 iteraciones utilizando sistema lineal completo
+qpintpointpc: 0 / 14 iteraciones utilizando sistema lineal completo

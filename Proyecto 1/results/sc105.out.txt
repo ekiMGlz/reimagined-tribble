@@ -1,0 +1,21 @@
+Warning: Matrix is close to singular or badly scaled. Results may be inaccurate. RCOND =  3.365360e-57. 
+> In qpintpoint_full (line 36)
+  In solsc105 (line 18)
+ 
+Problema: SC105
+n = 163
+m = 105
+qpintpoint_full converge: true
+qpintpoint converge: true
+qpintpointpc_full converge: true
+qpintpointpc converge: true
+quadprog converge: true
+                   qpintpoint_full    qpintpoint    qpintpointpc_full    qpintpointpc    quadprog 
+                   _______________    __________    _________________    ____________    _________
+
+    Iteraciones              27              17                15                15              8
+    Tiempo [s]          0.16364        0.045007           0.15601          0.074281      0.0088308
+    Fval              1.772e+05       1.772e+05         1.772e+05         1.772e+05      1.772e+05
+
+qpintpoint: 3 / 17 iteraciones utilizando sistema lineal completo
+qpintpointpc: 3 / 15 iteraciones utilizando sistema lineal completo

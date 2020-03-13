@@ -1,0 +1,17 @@
+Problema: AFIRO
+n = 51
+m = 27
+qpintpoint_full converge: true
+qpintpoint converge: true
+qpintpointpc_full converge: true
+qpintpointpc converge: true
+quadprog converge: true
+                   qpintpoint_full    qpintpoint    qpintpointpc_full    qpintpointpc     quadprog 
+                   _______________    __________    _________________    ____________    __________
+
+    Iteraciones              29               21               18                 18              7
+    Tiempo [s]         0.021026         0.016535         0.028907           0.036616       0.058853
+    Fval             2.0082e+05       2.0082e+05       2.0082e+05         2.0082e+05     2.0082e+05
+
+qpintpoint: 1 / 21 iteraciones utilizando sistema lineal completo
+qpintpointpc: 0 / 18 iteraciones utilizando sistema lineal completo

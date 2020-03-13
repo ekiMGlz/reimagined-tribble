@@ -1,0 +1,17 @@
+Problema: SCTAP1
+n = 660
+m = 300
+qpintpoint_full converge: true
+qpintpoint converge: true
+qpintpointpc_full converge: true
+qpintpointpc converge: true
+quadprog converge: true
+                   qpintpoint_full    qpintpoint    qpintpointpc_full    qpintpointpc    quadprog
+                   _______________    __________    _________________    ____________    ________
+
+    Iteraciones            56               87               37                 37            17 
+    Tiempo [s]         8.7194           5.8812           11.029             3.5177       0.20946 
+    Fval                14453            14453            14453              14453         14453 
+
+qpintpoint: 12 / 87 iteraciones utilizando sistema lineal completo
+qpintpointpc: 4 / 37 iteraciones utilizando sistema lineal completo

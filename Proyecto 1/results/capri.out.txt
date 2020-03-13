@@ -1,0 +1,17 @@
+Problema: CAPRI
+n = 496
+m = 271
+qpintpoint_full converge: false
+qpintpoint converge: false
+qpintpointpc_full converge: false
+qpintpointpc converge: false
+quadprog converge: true
+                   qpintpoint_full    qpintpoint    qpintpointpc_full    qpintpointpc     quadprog 
+                   _______________    __________    _________________    ____________    __________
+
+    Iteraciones             150              150              150                150             41
+    Tiempo [s]           12.779           7.7676           24.713             12.554        0.27425
+    Fval              1.035e+07       1.0297e+07       1.0354e+07         1.0354e+07     9.3979e+07
+
+qpintpoint: 52 / 150 iteraciones utilizando sistema lineal completo
+qpintpointpc: 49 / 150 iteraciones utilizando sistema lineal completo
